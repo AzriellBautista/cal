@@ -1,7 +1,7 @@
 use std::{process};
-
+use std::io::Write;
 use chrono::{Datelike, Local, Month, TimeZone};
-// use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 fn main() {
     let today = Local::now();
@@ -30,19 +30,29 @@ fn main() {
         ),
     );
 
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+
     for day in 1..=days_in_month + offset - 1 {
         if day < offset {
-            print!("   ");
+            write!(stdout, "   ").unwrap();
             continue;
         }
 
-        print!("{:>2} ", day - offset + 1);
+        if year == today.year() && month == today.month() && day - offset + 1 == today.day() {
+            stdout.set_color(ColorSpec::new().set_bg(Some(Color::Red)).set_fg(Some(Color::White))).unwrap();
+            write!(stdout, "{:>2} ", day - offset + 1).unwrap();
+            stdout.reset().unwrap();
+        } else {
+            write!(stdout, "{:>2} ", day - offset + 1).unwrap();
+        }
+
 
         if day % 7 == 0 {
-            println!();
+            writeln!(stdout, "").unwrap();
+
         }
     }
-    println!();
+    writeln!(stdout, "").unwrap();
 }
 
 fn get_days_in_month(
