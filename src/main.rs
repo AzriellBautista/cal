@@ -1,29 +1,83 @@
+/*
+    cal (v1.0)
+
+    Displays calendar on the terminal. A replica of the `cal` command in Linux.
+    Accepts month and year options and displays the calendar for that month and/or year.
+    If no options are used, it defaults to displaying the calendar for the current month.
+    Highlights the current day if present on the current calendar.
+
+    Usage: cal [--month <value>] [--year <value>]
+
+    Crates used:
+        chrono = "0.4.24"
+        termcolor = "1.2.0"
+        clap = "4.2.1"
+ */
+
 use std::{process};
 use std::io::Write;
 use chrono::{Datelike, Local, Month, TimeZone};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+use clap::{arg, Command, Arg};
 
 fn main() {
+    let args = Command::new("cal")
+        .version("1.0")
+        .author("Azriell")
+        .about("Display a calendar in terminal.")
+        .arg(arg!(-m --month <month> "Display calendar for that month (optional; defaults to current month)").required(false))
+        .arg(
+            Arg::new("year")
+            .short('y')
+            .long("year")
+            .help("Display calendar for that year (optional; defaults to current year)")
+            .required(false)
+        )   
+        .get_matches();
+
     let today = Local::now();
-    let year = today.year();
-    let month = today.month();
+
+    // let year = today.year();
+    let year = args
+        .get_one::<String>("year")
+        .and_then(|s| s.parse::<i32>().ok())
+        .unwrap_or_else(|| {
+            // eprintln!("Error: Invalid year. Defaulting to current year.");
+            if today.year() >= 9999 {
+                9999 as i32
+            } else {
+                today.year()
+            }
+        });
+
+    // let month = today.month();
+    let month = args
+        .get_one::<String>("month")
+        .and_then( |s| {
+            s.parse::<u32>().ok()
+        }).unwrap_or_else(|| {
+            // eprintln!("Error: Invalid month. Defaulting to current year.");
+            today.month()
+        });
+
+
     let days_in_month = match get_days_in_month(year, month) {
         Ok(days) => days,
         Err(e) => {
-            eprint!("Error: {}", e);
+            eprintln!("Error: {}", e);
             process::exit(1);
         }
     };
     let month_name = match get_month_name(month) {
         Ok(month_name) => month_name,
         Err(e) => {
-            eprint!("Error: {}", e);
+            eprintln!("Error: {}", e);
             process::exit(1);
         }
     };
     let offset = get_first_day_of_month_offset(year, month);
 
-    println!("{:^20}\nMo Tu We Th Fr Sa Su",
+    println!("\n{:^20}\nMo Tu We Th Fr Sa Su",
         format!("{} {}",
             month_name,
             year
@@ -31,6 +85,8 @@ fn main() {
     );
 
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    let mut marker_colorspec = ColorSpec::new();
+    marker_colorspec.set_bg(Some(Color::Red)).set_fg(Some(Color::White));
 
     for day in 1..=days_in_month + offset - 1 {
         if day < offset {
@@ -39,19 +95,19 @@ fn main() {
         }
 
         if year == today.year() && month == today.month() && day - offset + 1 == today.day() {
-            stdout.set_color(ColorSpec::new().set_bg(Some(Color::Red)).set_fg(Some(Color::White))).unwrap();
-            write!(stdout, "{:>2} ", day - offset + 1).unwrap();
+            stdout.set_color(&marker_colorspec).unwrap();
+            write!(stdout, "{:>2}", day - offset + 1).unwrap();
             stdout.reset().unwrap();
+            write!(stdout, " ").unwrap();
         } else {
             write!(stdout, "{:>2} ", day - offset + 1).unwrap();
         }
 
-
         if day % 7 == 0 {
             writeln!(stdout, "").unwrap();
-
         }
     }
+
     writeln!(stdout, "").unwrap();
 }
 
