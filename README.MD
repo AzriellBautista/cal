@@ -48,7 +48,7 @@ Run `cargo run` or `cargo build --release` to build the project as an executable
 - [x] Option to change month and year.
 - [ ] Option to change order of week days (e.g. the week starts on Sunday).
 - [ ] Option to toggle highlighting of current day so that it can be compatible
-      with the redirect operation to file (`>`` or `>>`) on terminal.
+      with the redirect operation to file (`>` or `>>`) on terminal.
 - [ ] Option to display multiple calendars given a date range.
 - [ ] Option to change color of weekends to differentiate the from weekdays.
 
